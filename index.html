@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XKSHKEKRBC"></script>
+    <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    gtag('config', 'G-XKSHKEKRBC');
+    </script>
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pickle Shuffle</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- Navigation bar with responsive image -->
+    <nav class="navbar navbar-light fixed-top" style="background-color: #66424e;">
+        <a class="navbar-brand" href="#">
+            <img src="logo.png" alt="Responsive Image" id="responsiveImageNav" class="img-fluid rounded-circle">
+        </a>
+    </nav>
+
+    <!-- Main content -->
+    <div class="container mt-5">
+
+        <!-- Form for number of courts and players -->
+        <form id="infoForm">
+            <div class="form-group">
+                <label for="numberOfCourts">Number of Open Courts:</label>
+                <input type="number" class="form-control" id="numberOfCourts" name="numberOfCourts" min="1" required>
+            </div>
+
+            <div class="form-group">
+                <label for="playerNames">Player Names:</label>
+                <textarea class="form-control" id="playerNames" name="playerNames" rows="4" placeholder="Enter each player on a new line" required></textarea>
+            </div>
+
+            <button type="button" class="btn btn-primary" onclick="submitForm()">Shuffle!</button>
+        </form>
+
+        <!-- Display grouped players -->
+        <div id="groupedPlayers" class="container mt-5"></div>
+    </div>
+
+<!-- Bootstrap JS -->
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+<!-- Custom JS -->
+<script src="script.js"></script>
+
+
+</body>
+</html>
