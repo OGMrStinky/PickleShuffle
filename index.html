@@ -26,10 +26,18 @@
         <a class="navbar-brand" href="#">
             <img src="logo.png" alt="Responsive Image" id="responsiveImageNav" class="img-fluid rounded-circle">
         </a>
+        <!-- Collapsible link in the navigation bar -->
+        <button class="btn btn-link text-light" type="button" data-toggle="collapse" data-target="#collapseText" aria-expanded="false" aria-controls="collapseText">
+            About This Page
+        </button>
     </nav>
 
     <!-- Main content -->
     <div class="container mt-5">
+        <!-- Collapsible block of text -->
+        <div class="container-fluid collapse" id="collapseText">
+                <p>This page is intended help groups divide up for doubles pickleball games.  It's random with each shuffle right now.  Future enhancements will add score records and more intelligent shuffling.</p>
+        </div>
 
         <!-- Form for number of courts and players -->
         <form id="infoForm">
@@ -39,7 +47,7 @@
             </div>
 
             <div class="form-group">
-                <label for="playerNames">Player Names:</label>
+                <label for="playerNames">Player Names (one name per line):</label>
                 <textarea class="form-control" id="playerNames" name="playerNames" rows="4" placeholder="Enter each player on a new line" required></textarea>
             </div>
 

@@ -4,6 +4,23 @@ document.getElementById('playerNames').addEventListener('input', function () {
     this.style.height = (this.scrollHeight) + 'px';
 });
 
+document.addEventListener('DOMContentLoaded', function () {
+    // Get the textarea element
+    var playerNamesTextarea = document.getElementById('playerNames');
+
+    // Listen for input event on the textarea
+    playerNamesTextarea.addEventListener('input', function () {
+        // Get the current value of the textarea
+        var currentValue = playerNamesTextarea.value;
+
+        // Replace any non-alphanumeric characters with an empty string
+        var newValue = currentValue.replace(/[^\w\r\n]/g, '');
+
+        // Set the filtered value back to the textarea
+        playerNamesTextarea.value = newValue;
+    });
+});
+
 // Function to submit the form and display grouped players
 function submitForm() {
     var numberOfCourts = document.getElementById('numberOfCourts').value;
@@ -12,6 +29,11 @@ function submitForm() {
     // Split player names into an array
     var playersArray = playerNames.split('\n').map(function (name) {
         return name.trim();
+    });
+
+    // Filter out empty names
+    playersArray = playersArray.filter(function (name) {
+        return name !== '';
     });
 
     // Group players by courts and bench (randomized)
@@ -76,13 +98,15 @@ function groupPlayers(playersArray, numberOfCourts) {
 
 // Function to display grouped players on the webpage
 function displayGroupedPlayers(groupedPlayers) {
+    console.log(groupedPlayers);
     var groupedPlayersContainer = document.getElementById('groupedPlayers');
     groupedPlayersContainer.innerHTML = '';
 
     // Display players in each court
     groupedPlayers.courts.forEach(function (court, index) {
         var courtCard = document.createElement('div');
-        courtCard.classList.add('card', 'mb-4');
+        courtCard.classList.add('card', 'mb-4', 'court-card');
+        courtCard.setAttribute('data-court-index', index); // Set a data attribute to store the court index
 
         var cardBody = document.createElement('div');
         cardBody.classList.add('card-body');
@@ -99,6 +123,17 @@ function displayGroupedPlayers(groupedPlayers) {
         // Display Team 2
         cardBody.appendChild(createTeamList('Team 2', court.team2));
 
+        // Add click event listener to the court card
+        courtCard.addEventListener('click', function () {
+            recordScore(index); // Call the function to record the score
+        });
+
+        // Check if the court is marked for the next shuffle
+        /*
+        if (markedCourts.includes(index)) {
+            courtCard.classList.add('marked'); // Add a visual indicator (you can customize the styling)
+        }
+*/
         courtCard.appendChild(cardBody);
         groupedPlayersContainer.appendChild(courtCard);
     });
@@ -124,6 +159,48 @@ function displayGroupedPlayers(groupedPlayers) {
         groupedPlayersContainer.appendChild(benchCard);
     }
 }
+
+var markedPlayers = {
+    courts: [],
+    bench: []
+};
+
+// Function to record the score and mark the court for the next shuffle
+function recordScore(courtIndex) {
+    // Find the first open position in the array
+    let openIndex = markedPlayers.courts.findIndex((court, index) => index >= courtIndex && (!court || Object.keys(court).length === 0));
+
+    // If no open position is found, add a new entry at the end
+    if (openIndex === -1) {
+        openIndex = markedPlayers.courts.length;
+        markedPlayers.courts.push({
+            team1: [],
+            team2: []
+        });
+    }
+
+    // Extract players from the displayed court card
+    var courtCard = document.querySelector('.court-card[data-court-index="' + courtIndex + '"]');
+    if (courtCard) {
+        var team1Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(2) ul li')).map(function (li) {
+            return li.textContent.trim();
+        });
+        var team2Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(3) ul li')).map(function (li) {
+            return li.textContent.trim();
+        });
+
+        // Insert values at the found open position
+        markedPlayers.courts[openIndex].team1.push(team1Players[0], team1Players[1]);
+        markedPlayers.courts[openIndex].team2.push(team2Players[0], team2Players[1]);
+
+        console.log(markedPlayers);
+        // Update the displayed courts (optional)
+        //displayGroupedPlayers(markedPlayers);
+    }
+}
+
+
+
 
 // Function to create a list of players within a card
 function createPlayerList(players) {
