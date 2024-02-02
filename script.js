@@ -13,11 +13,30 @@ const players = {
     getPlayers: function(status) {
         return this.players.filter((player) => player.status == status);
     },
+    removePlayers: function(playersList){
+        var refreshPlayers = this.players;
+        this.players.forEach(function(activeplayer){
+            if(!(playersList.find((player) => player == activeplayer.name))){
+                refreshPlayers = refreshPlayers.filter((obj) => obj.name !== activeplayer.name);
+            }
+        }); 
+        this.players = refreshPlayers;
+    },
+    getCount: function(){
+        return this.players.length;
+    },
     hasPlayer: function(name){
         return this.players.find((player) => player.name == name);
     },
     updateStatus: function(name, status){
-        this.players.find((player) => player.name == name).status = status;
+        //this.players.find((player) => player.name == name).status = status;
+        const player = players.hasPlayer(name);
+        if(player){
+            player.status = status;
+        };
+    },
+    hasScoresRecorded: function(){
+        return this.players.find((player) => player.score > 0);
     },
     updateScores: function(courtCard) {
         if (courtCard) {
@@ -31,13 +50,13 @@ const players = {
             });
 
             const foundplayer1 = this.players.find((player) => player.name == team1Players[0]);
-            foundplayer1.score += team1Score * 1;
+            if(team1Score && foundplayer1){foundplayer1.score += team1Score * 1;};
             const foundplayer2 = this.players.find((player) => player.name == team1Players[1]);
-            foundplayer2.score += team1Score * 1;
+            if(team1Score && foundplayer2){foundplayer2.score += team1Score * 1;};
             const foundplayer3 = this.players.find((player) => player.name == team2Players[0]);
-            foundplayer3.score += team2Score * 1;
+            if(team2Score && foundplayer3){foundplayer3.score += team2Score * 1;};
             const foundplayer4 = this.players.find((player) => player.name == team2Players[1]);
-            foundplayer4.score += team2Score * 1;
+            if(team2Score && foundplayer4){foundplayer4.score += team2Score * 1;};
 
         }
     }
@@ -94,14 +113,20 @@ function submitForm() {
             const listplayer = new player(listitem);
             players.addPlayer(listplayer);
         }
-    })
+    });
+    
+    players.removePlayers(playersList);
 
-    // Group players by courts and bench (randomized)
-    var groupedPlayers = groupPlayers(playersList, numberOfCourts);
+    // Group players by courts and bench
+    var groupedPlayers = groupPlayers(numberOfCourts);
 
-    // Display grouped players on the webpage
-    displayGroupedPlayers(groupedPlayers);
+    if (groupedPlayers){
+        // Display grouped players on the page
+        displayGroupedPlayers(groupedPlayers);
+    };
 
+    addBenchCard();
+    
     // Scroll down to the grouped players section
     scrollToGroupedPlayers();
 }
@@ -118,15 +143,60 @@ function scrollToGroupedPlayers() {
 }
 
 // Function to group players by courts and bench (randomized)
-function groupPlayers(playersArray, numberOfCourts) {
-    var randomizedPlayers = playersArray.sort(function () {
-        return 0.5 - Math.random();
+function groupPlayers(numberOfCourts) {
+    const newPlayersArray = players.getPlayers('new');
+    newPlayersArray.forEach(function(np){
+        players.updateStatus(np.name, "benched");
     });
+
+    if(players.getCount() < 2){
+        return;
+    }
+
+    var playersArray = players.getPlayers("benched");
+    var randomizedPlayers = [];
+    
+    if(players.hasScoresRecorded()){
+        if(playersArray.length < 2){return;};
+        
+        playersArray.sort((a, b) => {
+            return b.score - a.score;
+        });
+
+        const n = playersArray.length;
+        let i = 0;
+        while (i < Math.floor(n / 2)) {
+            randomizedPlayers.push(playersArray[i]);
+            i++;
+            randomizedPlayers.push(playersArray[i]);
+            if (i >= Math.floor(n / 2)){break;};
+            i--;
+            randomizedPlayers.push(playersArray[n-1-i]);
+            if (i >= Math.floor(n / 2)){break;};
+            i++;
+            randomizedPlayers.push(playersArray[n-1-i]);
+            i++;
+            if (i >= Math.floor(n / 2)){break;};
+        }
+        if (n % 2 !== 0) {
+            randomizedPlayers.push(playersArray[Math.floor(n / 2)]);
+        }
+
+        var usedCourtCount = document.querySelectorAll('.court-card').length;
+        numberOfCourts -= usedCourtCount;
+    }else{
+        playersArray = playersArray.concat(players.getPlayers("playing"));
+        randomizedPlayers = playersArray.sort(function () {
+            return 0.5 - Math.random();
+        });
+    };
 
     var groupedPlayers = {
         courts: [],
         bench: []
     };
+
+
 
     randomizedPlayers.forEach(function (player, index) {
         if (index < numberOfCourts * 4) {
@@ -142,16 +212,16 @@ function groupPlayers(playersArray, numberOfCourts) {
             }
 
             if (teamIndex === 0) {
-                groupedPlayers.courts[courtIndex].team1.push(player);
-                players.updateStatus(player, 'playing');
+                groupedPlayers.courts[courtIndex].team1.push(player.name);
+                players.updateStatus(player.name, 'playing');
             } else {
-                groupedPlayers.courts[courtIndex].team2.push(player);
-                players.updateStatus(player, 'playing');
+                groupedPlayers.courts[courtIndex].team2.push(player.name);
+                players.updateStatus(player.name, 'playing');
             }
         } else {
             // Assign remaining players to the bench
-            groupedPlayers.bench.push(player);
-            players.updateStatus(player, 'benched');
+            groupedPlayers.bench.push(player.name);
+            players.updateStatus(player.name, 'benched');
         }
     });
 
@@ -206,8 +276,17 @@ function addCardEventListeners() {
 function displayGroupedPlayers(groupedPlayers) {
     console.log(groupedPlayers);
     var groupedPlayersContainer = document.getElementById('groupedPlayers');
-    groupedPlayersContainer.innerHTML = '';
-
+  
+    var heldCards = [];
+    if(players.hasScoresRecorded()){
+        var courtCards = document.querySelectorAll('.court-card');
+        courtCards.forEach(function (courtCard) {
+            heldCards.push(groupedPlayersContainer.removeChild(courtCard));
+        });
+    }else{
+        groupedPlayersContainer.innerHTML = '';
+    };
+        
     // Display players in each court
     groupedPlayers.courts.forEach(function (court, index) {
         var courtCard = document.createElement('div');
@@ -220,7 +299,7 @@ function displayGroupedPlayers(groupedPlayers) {
         // Header with Court number
         var cardHeader = document.createElement('h5');
         cardHeader.classList.add('card-title');
-        cardHeader.textContent = 'Court ' + (index + 1);
+        cardHeader.textContent = 'Court';
         cardBody.appendChild(cardHeader);
 
         // Display Team 1
@@ -283,29 +362,11 @@ function displayGroupedPlayers(groupedPlayers) {
         groupedPlayersContainer.appendChild(courtCard);
     });
 
-    // Display players on the bench
-    /*
-    if (groupedPlayers.bench.length > 0) {
-        var benchCard = document.createElement('div');
-        benchCard.classList.add('card');
-
-        var cardBody = document.createElement('div');
-        cardBody.classList.add('card-body');
-
-        // Header for Bench
-        var cardHeader = document.createElement('h5');
-        cardHeader.classList.add('card-title');
-        cardHeader.textContent = 'Bench';
-        cardBody.appendChild(cardHeader);
-
-        // List of players on the bench
-        cardBody.appendChild(createPlayerList(groupedPlayers.bench));
-
-        benchCard.appendChild(cardBody);
-        groupedPlayersContainer.appendChild(benchCard);
-    }*/
-    addBenchCard();
     addCardEventListeners();
+
+    heldCards.forEach(function (courtCard) {
+        groupedPlayersContainer.appendChild(courtCard);
+    });
 }
 
 function addBenchCard(){
@@ -328,7 +389,7 @@ function addBenchCard(){
         // Header for Bench
         var cardHeader = document.createElement('h5');
         cardHeader.classList.add('card-title');
-        cardHeader.textContent = 'Bench';
+        cardHeader.textContent = 'Bench (total points)';
         cardBody.appendChild(cardHeader);
 
         // List of players on the bench
