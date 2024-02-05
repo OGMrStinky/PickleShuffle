@@ -96,6 +96,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
 // Function to submit the form and display grouped players
 function submitForm() {
+    const gamesPlayed = document.getElementById('gamesPlayed').value * 1 + 1;
+    var storeGamesPlayed = document.getElementById('gamesPlayed');
+    storeGamesPlayed.value = gamesPlayed;
+
     var numberOfCourts = document.getElementById('numberOfCourts').value;
     var playerNames = document.getElementById('playerNames').value;
     // Split player names into an array
@@ -118,7 +122,7 @@ function submitForm() {
     players.removePlayers(playersList);
 
     // Group players by courts and bench
-    var groupedPlayers = groupPlayers(numberOfCourts);
+    var groupedPlayers = groupPlayers(numberOfCourts, gamesPlayed);
 
     if (groupedPlayers){
         // Display grouped players on the page
@@ -143,7 +147,7 @@ function scrollToGroupedPlayers() {
 }
 
 // Function to group players by courts and bench (randomized)
-function groupPlayers(numberOfCourts) {
+function groupPlayers(numberOfCourts, gamesPlayed) {
     const newPlayersArray = players.getPlayers('new');
     newPlayersArray.forEach(function(np){
         players.updateStatus(np.name, "benched");
@@ -163,25 +167,32 @@ function groupPlayers(numberOfCourts) {
             return b.score - a.score;
         });
 
-        const n = playersArray.length;
-        let i = 0;
-        while (i < Math.floor(n / 2)) {
-            randomizedPlayers.push(playersArray[i]);
-            i++;
-            randomizedPlayers.push(playersArray[i]);
-            if (i >= Math.floor(n / 2)){break;};
-            i--;
-            randomizedPlayers.push(playersArray[n-1-i]);
-            if (i >= Math.floor(n / 2)){break;};
-            i++;
-            randomizedPlayers.push(playersArray[n-1-i]);
-            i++;
-            if (i >= Math.floor(n / 2)){break;};
+        if(gamesPlayed % 2 == 0){ //if number games played is even then level teams else use sorted list as-is
+            const n = playersArray.length;
+            let i = 0;
+            while (i < Math.floor(n / 2)) {
+                randomizedPlayers.push(playersArray[i]);
+                i++;
+                randomizedPlayers.push(playersArray[i]);
+                if (i >= Math.floor(n / 2)){break;};
+                i--;
+                randomizedPlayers.push(playersArray[n-1-i]);
+                if (i >= Math.floor(n / 2)){break;};
+                i++;
+                randomizedPlayers.push(playersArray[n-1-i]);
+                i++;
+                if (i >= Math.floor(n / 2)){break;};
+            }
+            if (n % 2 !== 0) {
+                randomizedPlayers.push(playersArray[Math.floor(n / 2)]);
+            }
+        } else if(gamesPlayed % 3 == 0){
+            randomizedPlayers = playersArray.sort(function () {
+                return 0.5 - Math.random();
+            });
+        } else {
+            randomizedPlayers = playersArray;
         }
-        if (n % 2 !== 0) {
-            randomizedPlayers.push(playersArray[Math.floor(n / 2)]);
-        }
-
         var usedCourtCount = document.querySelectorAll('.court-card').length;
         numberOfCourts -= usedCourtCount;
     }else{
