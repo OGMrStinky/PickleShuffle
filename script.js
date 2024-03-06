@@ -2,9 +2,89 @@ class player {
     name;
     score = 0;
     status = 'new'; //new, benched, playing
+    partners = [];
+    opponents = [];
     constructor(name){
         this.name = name;
+    };
+    addOpponent(opponent) {
+        if(opponent){
+            let opponentRecord = this.opponents.find(record => record.opponent === opponent);
+            if (opponentRecord) {
+                opponentRecord.gamesPlayed++;
+            } else {
+                this.opponents.push({ opponent, gamesPlayed: 1 });
+            }
+        }
+    };
+    addPartner(partner){
+        if(partner){
+            let partnerRecord = this.partners.find(record => record.partner === partner);
+            if (partnerRecord){
+                partnerRecord.gamesPlayed++;
+            } else {
+                this.partners.push({ partner, gamesPlayed: 1 });
+            }
+        }
+    };
+    pickPartner(availPlayers){
+        let pastPartners = this.partners; //get list of past partners
+
+        let leastPartner = { gamesPlayed: Infinity};
+        availPlayers.forEach(function(availPlayer){ //loop through avail players
+            //check if avail player is past partner
+            const pastPartner = pastPartners.find(record => record.partner.name === availPlayer.name);
+            if(pastPartner){
+                //leastPartner = pastPartner.gamesPlayed < leastPartner.gamesPlayed ? pastPartner : leastPartner;
+                if(pastPartner.gamesPlayed < leastPartner.gamesPlayed){
+                    leastPartner = {Player: pastPartner.partner, gamesPlayed: pastPartner.gamesPlayed};
+                }
+            } else{
+                leastPartner = {Player: availPlayer, gamesPlayed: 0};
+            };
+        });
+
+        availPlayers.splice(availPlayers.findIndex(function(player) {return player.name === leastPartner.Player.name}),1);
+
+        return leastPartner.Player;
+    };
+    pickOpponent(availPlayers){
+        let pastPartners = this.opponents; //get list of past opponents
+        
+        let leastPartner = { gamesPlayed: Infinity};
+        availPlayers.forEach(function(availPlayer){ //loop through avail players
+            //check if avail player is past partner
+            const pastPartner = pastPartners.find(record => record.opponent.name === availPlayer.name);
+            if(pastPartner){
+                //leastPartner = pastPartner.gamesPlayed < leastPartner.gamesPlayed ? pastPartner : leastPartner;
+                if(pastPartner.gamesPlayed < leastPartner.gamesPlayed){
+                    leastPartner = {Player: pastPartner.opponent, gamesPlayed: pastPartner.gamesPlayed};
+                }
+            } else{
+                leastPartner = {Player: availPlayer, gamesPlayed: 0};
+            };
+        });
+
+        availPlayers.splice(availPlayers.findIndex(function(player) {return player.name === leastPartner.Player.name}),1);
+
+        return leastPartner.Player;
     }
+/*
+        const bands = [
+        { name: "Led Zeppelin", year: 1968 },
+        { name: "Pink Floyd", year: 1965 },
+        { name: "Queen", year: 1970 },
+        { name: "The Clash", year: 1976 },
+        { name: "The Ramones", year: 1974 },
+        { name: "R.E.M.", year: 1980 }, 
+        ];
+
+      const earliestBand = bands.reduce((earliestSoFar, band) => {
+        return band.year < earliestSoFar.year ? band : earliestSoFar;
+      }, { year: Infinity }); // Start with a band in the infinitely distant future
+      
+      console.log(earliestBand.name); // outputs “Pink Floyd” 
+      */
 }
 
 const players = {
@@ -14,7 +94,7 @@ const players = {
         return this.players.filter((player) => player.status == status);
     },
     removePlayers: function(playersList){
-        var refreshPlayers = this.players;
+        let refreshPlayers = this.players;
         this.players.forEach(function(activeplayer){
             if(!(playersList.find((player) => player == activeplayer.name))){
                 refreshPlayers = refreshPlayers.filter((obj) => obj.name !== activeplayer.name);
@@ -40,24 +120,36 @@ const players = {
     },
     updateScores: function(courtCard) {
         if (courtCard) {
-            var team1Score = courtCard.querySelector('.team1Score').value;
-            var team2Score = courtCard.querySelector('.team2Score').value;
-            var team1Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(2) ul li')).map(function (li) {
+            let team1Score = courtCard.querySelector('.team1Score').value;
+            let team2Score = courtCard.querySelector('.team2Score').value;
+            let team1Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(2) ul li')).map(function (li) {
                 return li.textContent.trim();
             });
-            var team2Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(3) ul li')).map(function (li) {
+            let team2Players = Array.from(courtCard.querySelectorAll('.team-container:nth-child(3) ul li')).map(function (li) {
                 return li.textContent.trim();
             });
 
-            const foundplayer1 = this.players.find((player) => player.name == team1Players[0]);
-            if(team1Score && foundplayer1){foundplayer1.score += team1Score * 1;};
-            const foundplayer2 = this.players.find((player) => player.name == team1Players[1]);
-            if(team1Score && foundplayer2){foundplayer2.score += team1Score * 1;};
-            const foundplayer3 = this.players.find((player) => player.name == team2Players[0]);
-            if(team2Score && foundplayer3){foundplayer3.score += team2Score * 1;};
-            const foundplayer4 = this.players.find((player) => player.name == team2Players[1]);
-            if(team2Score && foundplayer4){foundplayer4.score += team2Score * 1;};
-
+            const team1player1 = this.players.find((player) => player.name == team1Players[0]);
+            const team1player2 = this.players.find((player) => player.name == team1Players[1]);
+            const team2player1 = this.players.find((player) => player.name == team2Players[0]);
+            const team2player2 = this.players.find((player) => player.name == team2Players[1]);
+            
+            if(team1Score){
+                if(team1player1){
+                    team1player1.score += team1Score * 1;
+                };
+                if(team1player2){
+                    team1player2.score += team1Score * 1;
+                };
+            };
+            if(team2Score){
+                if(team2player1){
+                    team2player1.score += team2Score * 1;
+                };
+                if(team2player2){
+                    team2player2.score += team2Score * 1;
+                };
+            };
         }
     }
 }
@@ -120,6 +212,15 @@ function submitForm() {
     });
     
     players.removePlayers(playersList);
+
+    //if no scores recorded then bench all players for next shuffle
+    if(!players.hasScoresRecorded()){
+        var courtCards = document.querySelectorAll('.court-card');
+        courtCards.forEach(function (courtCard) {
+            benchPlayers(courtCard);
+            courtCard.parentNode.removeChild(courtCard);
+        });
+    }
 
     // Group players by courts and bench
     var groupedPlayers = groupPlayers(numberOfCourts, gamesPlayed);
@@ -196,7 +297,6 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
         var usedCourtCount = document.querySelectorAll('.court-card').length;
         numberOfCourts -= usedCourtCount;
     }else{
-        playersArray = playersArray.concat(players.getPlayers("playing"));
         randomizedPlayers = playersArray.sort(function () {
             return 0.5 - Math.random();
         });
@@ -207,8 +307,48 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
         bench: []
     };
 
-
-
+    for (let index = 0; index < numberOfCourts; index++) {
+        groupedPlayers.courts[index] = {
+            team1: [],
+            team2: []
+        };
+        
+        if(randomizedPlayers.length > 3){
+            const seedPlayer = randomizedPlayers[0];
+            groupedPlayers.courts[index].team1.push(seedPlayer.name);
+            players.updateStatus(seedPlayer.name, 'Playing');
+            randomizedPlayers.splice(randomizedPlayers.findIndex(function(player) {return player.name === seedPlayer.name}),1);
+            const team1Partner = seedPlayer.pickPartner(randomizedPlayers);
+            groupedPlayers.courts[index].team1.push(team1Partner.name);
+            players.updateStatus(team1Partner.name, 'Playing');
+            let team2Partner = team1Partner.pickOpponent(randomizedPlayers);
+            groupedPlayers.courts[index].team2.push(team2Partner.name);
+            players.updateStatus(team2Partner.name, 'Playing');
+            team2Partner = team2Partner.pickPartner(randomizedPlayers);
+            groupedPlayers.courts[index].team2.push(team2Partner.name);
+            players.updateStatus(team2Partner.name, 'Playing');
+        } else if(randomizedPlayers.length >1){
+            const seedPlayer = randomizedPlayers[0];
+            groupedPlayers.courts[index].team1.push(seedPlayer.name);
+            players.updateStatus(seedPlayer.name, 'Playing');
+            randomizedPlayers.splice(randomizedPlayers.findIndex(function(player) {return player.name === seedPlayer.name}),1);
+            let Partner = seedPlayer.pickOpponent(randomizedPlayers);
+            groupedPlayers.courts[index].team2.push(Partner.name);
+            players.updateStatus(Partner.name, 'Playing');
+            if(randomizedPlayers.length == 0){break};
+            Partner = seedPlayer.pickPartner(randomizedPlayers);
+            groupedPlayers.courts[index].team1.push(Partner.name);
+            players.updateStatus(Partner.name, 'Playing');
+            if(randomizedPlayers.length == 0){break};
+            Partner = Partner.pickOpponent(randomizedPlayers);
+            groupedPlayers.courts[index].team2.push(Partner.name);
+            players.updateStatus(Partner.name, 'Playing');
+        } else {
+            break;
+        };
+        
+    }
+    /*
     randomizedPlayers.forEach(function (player, index) {
         if (index < numberOfCourts * 4) {
             // Assign players to courts and split into two teams
@@ -235,6 +375,10 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
             players.updateStatus(player.name, 'benched');
         }
     });
+*/
+    for (let index = 0; index < randomizedPlayers.length - 1; index++) {
+        groupedPlayers.bench.push(randomizedPlayers[index].name);
+    };
 
     return groupedPlayers;
 }
@@ -294,8 +438,6 @@ function displayGroupedPlayers(groupedPlayers) {
         courtCards.forEach(function (courtCard) {
             heldCards.push(groupedPlayersContainer.removeChild(courtCard));
         });
-    }else{
-        groupedPlayersContainer.innerHTML = '';
     };
         
     // Display players in each court
@@ -411,13 +553,6 @@ function addBenchCard(){
     }
 }
 
-// Function to update the court card with recorded scores (you need to implement this)
-function updateCourtCardScores(courtCard, team1Score, team2Score) {
-    // Update the court card with the scores
-    // ...
-    console.log(`Recorded scores for court ${courtCard.dataset.courtIndex}: Team 1 - ${team1Score}, Team 2 - ${team2Score}`);
-}
-
 //send players to bench
 function benchPlayers(courtCard){
     // Extract players from the displayed court card
@@ -430,15 +565,36 @@ function benchPlayers(courtCard){
             return li.textContent.trim();
         });
 
-        // Insert values at the found open position
-        if(team1Players[0]){console.log(team1Players[0])};
-        if(team1Players[1]){console.log(team1Players[1])};
-        if(team2Players[0]){console.log(team2Players[0])};
-        if(team2Players[1]){console.log(team2Players[1])};
-        if(team1Players[0]){players.updateStatus(team1Players[0], 'benched');};
-        if(team1Players[1]){players.updateStatus(team1Players[1], 'benched');};
-        if(team2Players[0]){players.updateStatus(team2Players[0], 'benched');};
-        if(team2Players[1]){players.updateStatus(team2Players[1], 'benched');};
+        const team1player1 = players.hasPlayer(team1Players[0]);
+        const team1player2 = players.hasPlayer(team1Players[1]);
+        const team2player1 = players.hasPlayer(team2Players[0]);
+        const team2player2 = players.hasPlayer(team2Players[1]);
+
+        if(team1player1){
+            players.updateStatus(team1Players[0], 'benched');
+            team1player1.addOpponent(team2player1);
+            team1player1.addOpponent(team2player2);
+            team1player1.addPartner(team1player2);
+        };
+        if(team1player2){
+            players.updateStatus(team1Players[1], 'benched');
+            team1player2.addOpponent(team2player1);
+            team1player2.addOpponent(team2player2);
+            team1player2.addPartner(team1player1);
+        };
+        if(team2player1){
+            players.updateStatus(team2Players[0], 'benched');
+            team2player1.addOpponent(team1player1);
+            team2player1.addOpponent(team1player2);
+            team2player1.addPartner(team2player2);
+        };
+        if(team2player2){
+            players.updateStatus(team2Players[1], 'benched');
+            team2player2.addOpponent(team1player1);
+            team2player2.addOpponent(team1player2);
+            team2player2.addPartner(team2player1);
+        };
+        
         addBenchCard();
     }
 }
