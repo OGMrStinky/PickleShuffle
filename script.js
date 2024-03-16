@@ -1,9 +1,16 @@
+const ContactTable = localforage.createInstance({
+    name: "PicklShuffle",
+    storeName: "ShuffleTable"
+});
+
 class player {
     name;
     score = 0;
+    benchTime = 0;
     status = 'new'; //new, benched, playing
     partners = [];
     opponents = [];
+    benchTime = 0;
     constructor(name){
         this.name = name;
     };
@@ -231,6 +238,20 @@ function submitForm() {
     };
 
     addBenchCard();
+
+    //update benchTime for each benched player
+    let benchedPlayers = players.getPlayers("benched");
+    benchedPlayers.forEach(function (bplayer) {
+        bplayer.benchTime = Date.now();
+    });
+
+    ContactTable.setItem('players', players.players).then(function (value) {
+        // Do other things once the value has been saved.
+        console.log(value);
+    }).catch(function(err) {
+        // This code runs if there were any errors
+        console.log(err); 
+    });
     
     // Scroll down to the grouped players section
     scrollToGroupedPlayers();
@@ -254,58 +275,23 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
         players.updateStatus(np.name, "benched");
     });
 
-    if(players.getCount() < 2){
-        return;
-    }
-
     var playersArray = players.getPlayers("benched");
-    var randomizedPlayers = [];
-    
-    if(players.hasScoresRecorded()){
-        if(playersArray.length < 2){return;};
-        
-        playersArray.sort((a, b) => {
-            return b.score - a.score;
-        });
+    if(playersArray.length < 2){return;};
 
-        if(gamesPlayed % 2 == 0){ //if number games played is even then level teams else use sorted list as-is
-            const n = playersArray.length;
-            let i = 0;
-            while (i < Math.floor(n / 2)) {
-                randomizedPlayers.push(playersArray[i]);
-                i++;
-                randomizedPlayers.push(playersArray[i]);
-                if (i >= Math.floor(n / 2)){break;};
-                i--;
-                randomizedPlayers.push(playersArray[n-1-i]);
-                if (i >= Math.floor(n / 2)){break;};
-                i++;
-                randomizedPlayers.push(playersArray[n-1-i]);
-                i++;
-                if (i >= Math.floor(n / 2)){break;};
-            }
-            if (n % 2 !== 0) {
-                randomizedPlayers.push(playersArray[Math.floor(n / 2)]);
-            }
-        } else if(gamesPlayed % 3 == 0){
-            randomizedPlayers = playersArray.sort(function () {
-                return 0.5 - Math.random();
-            });
-        } else {
-            randomizedPlayers = playersArray;
-        }
-        var usedCourtCount = document.querySelectorAll('.court-card').length;
-        numberOfCourts -= usedCourtCount;
-    }else{
-        randomizedPlayers = playersArray.sort(function () {
-            return 0.5 - Math.random();
-        });
-    };
+    //sorty by benchTime so those with most bench time get picked first
+    playersArray.sort((a, b) => {
+        return b.benchTime - a.benchTime;
+    });
 
+    //setup object for grouping
     var groupedPlayers = {
         courts: [],
         bench: []
     };
+
+    //adjust numberOfCourts to reflect counts in use
+    var usedCourtCount = document.querySelectorAll('.court-card').length;
+    numberOfCourts -= usedCourtCount;
 
     for (let index = 0; index < numberOfCourts; index++) {
         groupedPlayers.courts[index] = {
@@ -313,34 +299,43 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
             team2: []
         };
         
-        if(randomizedPlayers.length > 3){
-            const seedPlayer = randomizedPlayers[0];
+        if(playersArray.length > 3){
+            const seedPlayer = playersArray[0];
+            //add first player from list
             groupedPlayers.courts[index].team1.push(seedPlayer.name);
+            //update status of player to playing
             players.updateStatus(seedPlayer.name, 'Playing');
-            randomizedPlayers.splice(randomizedPlayers.findIndex(function(player) {return player.name === seedPlayer.name}),1);
-            const team1Partner = seedPlayer.pickPartner(randomizedPlayers);
+            //remove player from list
+            playersArray.splice(playersArray.findIndex(function(player) {return player.name === seedPlayer.name}),1);
+            //pick partner for seed player
+            const team1Partner = seedPlayer.pickPartner(playersArray);
             groupedPlayers.courts[index].team1.push(team1Partner.name);
             players.updateStatus(team1Partner.name, 'Playing');
-            let team2Partner = team1Partner.pickOpponent(randomizedPlayers);
+            //pick opponent for seed player's partner
+            let team2Partner = team1Partner.pickOpponent(playersArray);
             groupedPlayers.courts[index].team2.push(team2Partner.name);
             players.updateStatus(team2Partner.name, 'Playing');
-            team2Partner = team2Partner.pickPartner(randomizedPlayers);
+            //pick partner for seed player's partner's opponnent
+            team2Partner = team2Partner.pickPartner(playersArray);
             groupedPlayers.courts[index].team2.push(team2Partner.name);
             players.updateStatus(team2Partner.name, 'Playing');
-        } else if(randomizedPlayers.length >1){
-            const seedPlayer = randomizedPlayers[0];
+        } else if(playersArray.length >1){
+            const seedPlayer = playersArray[0];
             groupedPlayers.courts[index].team1.push(seedPlayer.name);
             players.updateStatus(seedPlayer.name, 'Playing');
-            randomizedPlayers.splice(randomizedPlayers.findIndex(function(player) {return player.name === seedPlayer.name}),1);
-            let Partner = seedPlayer.pickOpponent(randomizedPlayers);
+            playersArray.splice(playersArray.findIndex(function(player) {return player.name === seedPlayer.name}),1);
+            //pick opponent for seed player first because number of available players in list is less than 3
+            let Partner = seedPlayer.pickOpponent(playersArray);
             groupedPlayers.courts[index].team2.push(Partner.name);
             players.updateStatus(Partner.name, 'Playing');
-            if(randomizedPlayers.length == 0){break};
-            Partner = seedPlayer.pickPartner(randomizedPlayers);
+            if(playersArray.length == 0){break};
+            //pick partner for seed player
+            Partner = seedPlayer.pickPartner(playersArray);
             groupedPlayers.courts[index].team1.push(Partner.name);
             players.updateStatus(Partner.name, 'Playing');
-            if(randomizedPlayers.length == 0){break};
-            Partner = Partner.pickOpponent(randomizedPlayers);
+            if(playersArray.length == 0){break};
+            //pick partner for opponent though shouldn't ever happen since it requires 4 available players
+            Partner = Partner.pickOpponent(playersArray);
             groupedPlayers.courts[index].team2.push(Partner.name);
             players.updateStatus(Partner.name, 'Playing');
         } else {
@@ -348,36 +343,9 @@ function groupPlayers(numberOfCourts, gamesPlayed) {
         };
         
     }
-    /*
-    randomizedPlayers.forEach(function (player, index) {
-        if (index < numberOfCourts * 4) {
-            // Assign players to courts and split into two teams
-            var courtIndex = Math.floor(index / 4);
-            var teamIndex = index % 2; // 0 or 1 for team assignment
-            
-            if (!groupedPlayers.courts[courtIndex]) {
-                groupedPlayers.courts[courtIndex] = {
-                    team1: [],
-                    team2: []
-                };
-            }
-
-            if (teamIndex === 0) {
-                groupedPlayers.courts[courtIndex].team1.push(player.name);
-                players.updateStatus(player.name, 'playing');
-            } else {
-                groupedPlayers.courts[courtIndex].team2.push(player.name);
-                players.updateStatus(player.name, 'playing');
-            }
-        } else {
-            // Assign remaining players to the bench
-            groupedPlayers.bench.push(player.name);
-            players.updateStatus(player.name, 'benched');
-        }
-    });
-*/
-    for (let index = 0; index < randomizedPlayers.length - 1; index++) {
-        groupedPlayers.bench.push(randomizedPlayers[index].name);
+   
+    for (let index = 0; index < playersArray.length - 1; index++) {
+        groupedPlayers.bench.push(playersArray[index].name);
     };
 
     return groupedPlayers;
@@ -523,24 +491,24 @@ function displayGroupedPlayers(groupedPlayers) {
 }
 
 function addBenchCard(){
-    var groupedPlayersContainer = document.getElementById('groupedPlayers');
-    var benchCard = document.getElementById('benchcard');
+    let groupedPlayersContainer = document.getElementById('groupedPlayers');
+    let benchCard = document.getElementById('benchcard');
     if (benchCard){
         groupedPlayersContainer.removeChild(benchCard);
     }
 
-    var benchedPlayers = players.getPlayers("benched");
+    let benchedPlayers = players.getPlayers("benched");
 
     if (benchedPlayers.length > 0) {
         benchCard = document.createElement('div');
         benchCard.classList.add('card');
         benchCard.setAttribute('id', 'benchcard');
 
-        var cardBody = document.createElement('div');
+        let cardBody = document.createElement('div');
         cardBody.classList.add('card-body');
 
         // Header for Bench
-        var cardHeader = document.createElement('h5');
+        let cardHeader = document.createElement('h5');
         cardHeader.classList.add('card-title');
         cardHeader.textContent = 'Bench (total points)';
         cardBody.appendChild(cardHeader);
