@@ -7,10 +7,10 @@ class player {
     name;
     score = 0;
     benchTime = 0;
+    benchCount = 0;
     status = 'new'; //new, benched, playing
     partners = [];
     opponents = [];
-    benchTime = 0;
     constructor(name){
         this.name = name;
     };
@@ -241,8 +241,11 @@ function submitForm() {
 
     //update benchTime for each benched player
     let benchedPlayers = players.getPlayers("benched");
+    let lastBenchTime = Date.now()
     benchedPlayers.forEach(function (bplayer) {
-        bplayer.benchTime = Date.now();
+        bplayer.benchTime = lastBenchTime
+        lastBenchTime += 1;
+        bplayer.benchCount += 1;
     });
 
     ContactTable.setItem('players', players.players).then(function (value) {
@@ -270,28 +273,47 @@ function scrollToGroupedPlayers() {
 
 // Function to group players by courts and bench (randomized)
 function groupPlayers(numberOfCourts, gamesPlayed) {
+
+    //get max bench time and count to assign to new players that join after game 1 so they're not stuck on the bench to catch up
+    let maxBenchTime = players.players.reduce((accumulator, object) => {
+        return Math.max(accumulator, object.benchTime);
+    }, 0);
+
+    let maxBenchCount = players.players.reduce((accumulator, object) => {
+        return Math.max(accumulator, object.benchCount);
+    }, 0);
+
     const newPlayersArray = players.getPlayers('new');
-    newPlayersArray.forEach(function(np){
+    newPlayersArray.forEach(function(np, index){
         players.updateStatus(np.name, "benched");
+        if(gamesPlayed > 1){
+            np.benchCount = maxBenchCount + index * 1 + 1;
+            np.benchTime = maxBenchTime + index * 1 + 1;
+        };
     });
 
     var playersArray = players.getPlayers("benched");
     if(playersArray.length < 2){return;};
 
-    //sorty by benchTime so those with most bench time get picked first
+    //sorty by last bench time
     playersArray.sort((a, b) => {
-        return b.benchTime - a.benchTime;
+        return b.benchCount - a.benchCount || b.benchTime - a.benchTime;
     });
 
+    //adjust numberOfCourts to reflect counts in use
+    var usedCourtCount = document.querySelectorAll('.court-card').length;
+    numberOfCourts -= usedCourtCount;
+
+    //remove players down to how many can play from array sorted by last bench time
+    while (playersArray.length > 4 * numberOfCourts) {
+        playersArray.pop();
+    }
+        
     //setup object for grouping
     var groupedPlayers = {
         courts: [],
         bench: []
     };
-
-    //adjust numberOfCourts to reflect counts in use
-    var usedCourtCount = document.querySelectorAll('.court-card').length;
-    numberOfCourts -= usedCourtCount;
 
     for (let index = 0; index < numberOfCourts; index++) {
         groupedPlayers.courts[index] = {
