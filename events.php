@@ -1,12 +1,15 @@
 <?php
 
 require_once 'core/init.php';
+$isOpen = false;
 
 if(!Input::get('eventcode')) {
     Redirect::to('EventNotFound.html');
 }elseif(!Event::checkIsOpen(Input::get('eventcode'))) {
-    Redirect::to('EventNotFound.html');
-
+    $isOpen = true;
+    if(!Input::get('ownercode')) {
+        Redirect::to('EventNotFound.html');
+    }
 }
 
 $newTeamCode = "";
@@ -153,12 +156,12 @@ $teamCounter = 0;
         <?php elseif (!Input::get('teamcode') || !$event->teams()): ?>
             <div class="d-flex justify-content-start mb-3">
                 <!-- Button to add a team -->
-                <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#addTeamModal">
+                <button type="button" class="btn btn-primary mr-2" data-toggle="modal" data-target="#addTeamModal" <?= ($isOpen) ? ' disabled' : "" ?>>
                     Add Team  <i class="fas fa-user-plus"></i>
                 </button>
                         <!-- if the ownercode is set, display a share button with a share icon -->
                 <?php if (Input::get('ownercode')): ?>
-                    <button type="button" class="btn btn-primary" id="shareEventButton">
+                    <button type="button" class="btn btn-primary" id="shareEventButton" <?= ($isOpen) ? ' disabled' : "" ?>>
                         <i class="fas fa-share"></i> Share Event
                     </button>
                 <?php endif; ?>
@@ -218,6 +221,7 @@ $teamCounter = 0;
                 </div>
             </div>
         </div>
+
         <!-- check if teams exist and display table else display message -->
         <?php if ($event->teams()): ?>
             
@@ -244,13 +248,15 @@ $teamCounter = 0;
                                     data-player1-lastname="<?= $team->player1lastname ?>" 
                                     data-player2-firstname="<?= $team->player2firstname ?>" 
                                     data-player2-lastname="<?= $team->player2lastname ?>"
-                                    <?= ($event->isMine() || $myTeamCode == $team->teamcode) ? '' : 'style="display: none;"' ?>>
+                                    <?= ($event->isMine() || $myTeamCode == $team->teamcode) ? '' : 'style="display: none;"' ?>
+                                    <?= ($isOpen) ? 'disabled' : "" ?>>
                                 Edit
                             </button>
                             <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#deleteTeamModal" 
                                     data-teamcode="<?= ($event->isMine() || $myTeamCode == $team->teamcode) ? $team->teamcode : 9999 ?>" 
                                     data-team-name="<?= $team->player1firstname . ' ' . substr($team->player1lastname, 0, 1) . '. / ' . $team->player2firstname . ' ' . substr($team->player2lastname, 0, 1) . '.' ?>"
-                                    <?= ($event->isMine() || $myTeamCode == $team->teamcode) ? '' : 'style="display: none;"' ?>>
+                                    <?= ($event->isMine() || $myTeamCode == $team->teamcode) ? '' : 'style="display: none;"' ?>
+                                    <?= ($isOpen) ? 'disabled' : "" ?>>
                                 Delete
                             </button>
                         </td>
