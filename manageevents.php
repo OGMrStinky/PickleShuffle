@@ -125,8 +125,7 @@ $events = $stmt->fetchAll();
             <div class="col-auto"></div> <!-- Empty column to balance the layout -->
         </div>
     </nav>
-    <div class="container">
-        <h2>Event List</h2>
+    <div class="container main-content">
         <!-- Add Event Button -->
         <button type="button" class="btn btn-primary mb-3" data-toggle="modal" data-target="#addEventModal">
             Add Event

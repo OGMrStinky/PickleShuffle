@@ -186,26 +186,30 @@ $teamCounter = 0;
                         </button>
                     </div>
                     <div class="modal-body">
+                        <!-- Tip for users -->
+                        <div class="alert alert-info" role="alert">
+                            Please enter the full first and last names for both players.  Only first name and last initial will display to the group.
+                        </div>
                         <!-- Form to add a team, teams have two players, collect first and last name in separate inputs -->
                         <form id="addTeamForm" method="post">
                             <!-- Player 1 First Name and Last Name -->
                             <div class="form-group  mb-2">
                                 <label for="player1firstname">First Name</label>
-                                <input type="text" class="form-control" id="player1firstname" name="player1firstname" required>
+                                <input type="text" class="form-control" id="player1firstname" name="player1firstname" minlength="3" required>
                             </div>
                             <div class="form-group  mb-2">
                                 <label for="player1lastname">Last Name</label>
-                                <input type="text" class="form-control" id="player1lastname" name="player1lastname" required>
+                                <input type="text" class="form-control" id="player1lastname" name="player1lastname" minlength="3" required>
                             </div>
                             
                             <!-- Player 2 First Name and Last Name -->
                             <div class="form-group  mb-2">
                                 <label for="player2firstname">First Name</label>
-                                <input type="text" class="form-control" id="player2firstname" name="player2firstname" required>
+                                <input type="text" class="form-control" id="player2firstname" name="player2firstname" minlength="3" required>
                             </div>
                             <div class="form-group  mb-2">
                                 <label for="player2lastname">Last Name</label>
-                                <input type="text" class="form-control" id="player2lastname" name="player2lastname" required>
+                                <input type="text" class="form-control" id="player2lastname" name="player2lastname" minlength="3" required>
                             </div>
                             
                             <input type="hidden" name="eventid" value="<?= $event->data()->id ?>">
